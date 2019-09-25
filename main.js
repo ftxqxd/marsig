@@ -785,7 +785,7 @@ class Game {
 
         let [x, y] = Game.game_to_screen(row, col);
         ctx.save();
-        ctx.strokeStyle = '#000';
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
         ctx.fillStyle = Game.tile_colour(tile);
         ctx.lineWidth = 1;
         ctx.shadowColor = highlight ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.1)';
