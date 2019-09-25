@@ -911,6 +911,12 @@ class Game {
     }
 }
 
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+        .register('/sw.js');
+}
+
+
 
 let game = new Game();
 cvs.onclick = e => game.onclick(e);
