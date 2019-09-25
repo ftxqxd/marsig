@@ -18,7 +18,8 @@ const TILE_EMPTY = 0,
       TILE_SILVER      = 11,
       TILE_GOLD        = 12,
       TILE_VITAE       = 13,
-      TILE_MORS        = 14;
+      TILE_MORS        = 14,
+      TILE_RESTART     = -1;
 
 const SCALE = 56;
 
@@ -446,7 +447,7 @@ class Board {
     generate_hard() {
         while (true) {
             this.generate();
-            if (this.difficulty() >= 0.8) {
+            if (this.difficulty(25) >= 0.96) {
                 return;
             }
         }
@@ -470,7 +471,7 @@ class Board {
 
         let unlocked = this.unlocked_tiles();
         for (let i = 0; i < unlocked.length; i++) {
-            for (let j = i; j < unlocked.length; j++) {
+            for (let j = i + 1; j < unlocked.length; j++) {
                 let [[row1, col1], [row2, col2]] = [unlocked[i], unlocked[j]];
                 if (this.can_match(row1, col1, row2, col2)) {
                     moves.push([[row1, col1], [row2, col2]]);
@@ -506,16 +507,15 @@ class Board {
         return false;
     }
 
-    difficulty() {
-        const GAMES = 10;
+    difficulty(games) {
         let wins = 0;
-        for (let i = 0; i < GAMES; i++) {
+        for (let i = 0; i < games; i++) {
             let board2 = this.copy();
             if (board2.random_play()) {
                 wins++;
             }
         }
-        return 1 - wins/GAMES;
+        return 1 - wins/games;
     }
 
     static board_positions() {
@@ -549,6 +549,9 @@ class Board {
         let tile = this.tiles[row][col];
         if (tile === TILE_EMPTY) {
             return false;
+        }
+        if (tile === TILE_RESTART) {
+            return true;
         }
         if (tile >= TILE_LEAD && tile <= TILE_GOLD && tile !== this.next_metal) {
             return false;
@@ -637,16 +640,23 @@ class Board {
 
 class Game {
     constructor() {
+        this.initialize();
+    }
+
+    initialize() {
         this.board = new Board();
         this.board.generate_hard();
         this.selected = null;
         this.start_time = null;
+        this.draw(ctx);
     }
 
     static tile_colour(tile) {
         switch (tile) {
             case TILE_EMPTY:
                 return '#fff';
+            case TILE_RESTART:
+                return '#444';
             case TILE_AIR:
                 return '#aaf';
             case TILE_FIRE:
@@ -683,6 +693,8 @@ class Game {
         switch (tile) {
             case TILE_EMPTY:
                 return '';
+            case TILE_RESTART:
+                return '⭮';
             case TILE_AIR:
                 return '🜁';
             case TILE_FIRE:
@@ -733,6 +745,7 @@ class Game {
             case TILE_COPPER:
             case TILE_SILVER:
                 return '36px';
+            case TILE_RESTART:
             case TILE_GOLD:
                 return '42px';
         }
@@ -765,6 +778,8 @@ class Game {
                 return [0.0, 0.03];
             case TILE_IRON:
                 return [0.0, 0.03];
+            case TILE_RESTART:
+                return [0.0, 0.05];
         }
     }
 
@@ -850,6 +865,11 @@ class Game {
             }
             alert("You win!\n\nYour time: " + Game.format_time(elapsed) + message);
         }
+
+        if (this.board.legal_moves().length === 0 && !this.board.tile_is_unlocked(6, 6)) {
+            this.board.tiles[6][6] = TILE_RESTART;
+            this.draw(ctx);
+        }
     }
 
     try_start_timer() {
@@ -869,6 +889,11 @@ class Game {
                 this.try_start_timer();
                 return;
             }
+
+            if (this.board.tiles[row][col] === TILE_RESTART) {
+                this.initialize();
+                return;
+            }
             this.selected = [row, col];
             return;
         }
@@ -877,16 +902,17 @@ class Game {
             this.selected = null;
             return;
         }
+
         if (this.board.try_match([row, col], [row2, col2])) {
             this.try_start_timer();
         }
+
         this.selected = null;
     }
 }
 
 
 let game = new Game();
-game.draw(ctx);
 cvs.onclick = e => game.onclick(e);
 // try to reload font
 setTimeout(() => game.draw(ctx), 100);
