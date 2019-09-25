@@ -20,7 +20,7 @@ const TILE_EMPTY = 0,
       TILE_VITAE       = 13,
       TILE_MORS        = 14;
 
-const SCALE = 60;
+const SCALE = 56;
 
 function draw_hexagon(ctx, x, y, size) {
     ctx.save();
@@ -361,7 +361,7 @@ class Game {
     static tile_colour(tile) {
         switch (tile) {
             case TILE_EMPTY:
-                return '#edc';
+                return '#faf8f0';
             case TILE_AIR:
                 return '#88f';
             case TILE_FIRE:
@@ -484,15 +484,45 @@ class Game {
     }
 
     static game_to_screen(row, col) {
-        let x = Math.round((col - row/2 + 3) * SCALE);
-        let y = row * SCALE / 1.2;
+        let x = Math.round((col - row/2 + 3) * SCALE) - 10;
+        let y = row * SCALE / 1.15;
         return [x, y];
     }
 
     static screen_to_game(x, y) {
-        let row = Math.round(y/SCALE*1.2);
-        let col = Math.round(x/SCALE + row/2) - 3;
+        let row = Math.round(y/SCALE*1.15);
+        let col = Math.round((x + 10)/SCALE + row/2) - 3;
         return [row, col];
+    }
+
+    draw_tile(ctx, row, col, highlight) {
+        let tile = this.board.tiles[row][col];
+
+        let [x, y] = Game.game_to_screen(row, col);
+        ctx.save();
+        ctx.strokeStyle = '#000';
+        ctx.fillStyle = Game.tile_colour(tile);
+        ctx.lineWidth = 1;
+        ctx.shadowColor = highlight ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.1)';
+        ctx.shadowBlur = highlight ? 20 : 10;
+        draw_hexagon(ctx, x, y, SCALE / Math.sqrt(3));
+        ctx.fillStyle = '#fff';
+        ctx.font = Game.tile_size(tile) + " SymbolaMarsig";
+        let [offset_x, offset_y] = Game.tile_offset(tile);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.translate(x + SCALE*offset_x, y + SCALE*offset_y);
+        if (tile === TILE_MORS) {
+            ctx.rotate(Math.PI);
+        }
+        ctx.fillText(Game.tile_symbol(tile), 0, 0);
+        ctx.restore();
+
+        if (!this.board.tile_is_unlocked(row, col)) {
+            ctx.strokeStyle = 'rgba(0,0,0,0)';
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            draw_hexagon(ctx, x, y, SCALE / Math.sqrt(3));
+        }
     }
 
     draw(ctx) {
@@ -501,41 +531,16 @@ class Game {
         for (let row = 1; row <= 11; row++) {
             let offset = Board.row_offset(row);
             for (let col = 1 + offset; col <= offset + Board.row_size(row); col++) {
-                let tile = this.board.tiles[row][col];
-
-                let [x, y] = Game.game_to_screen(row, col);
-                ctx.strokeStyle = '#000';
-                ctx.fillStyle = Game.tile_colour(tile);
-                ctx.lineWidth = 1;
-                draw_hexagon(ctx, x, y, SCALE / Math.sqrt(3));
-                ctx.fillStyle = '#fff';
-                ctx.font = Game.tile_size(tile) + " SymbolaMarsig";
-                let [offset_x, offset_y] = Game.tile_offset(tile);
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.save();
-                ctx.translate(x + SCALE*offset_x, y + SCALE*offset_y);
-                if (tile === TILE_MORS) {
-                    ctx.rotate(Math.PI);
-                }
-                ctx.fillText(Game.tile_symbol(tile), 0, 0);
-                ctx.restore();
-
-                if (!this.board.tile_is_unlocked(row, col)) {
-                    ctx.strokeStyle = 'rgba(0,0,0,0)';
-                    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-                    draw_hexagon(ctx, x, y, SCALE / Math.sqrt(3));
-                }
+                this.draw_tile(ctx, row, col, false);
             }
         }
-
         if (this.selected !== null) {
-            let [row, col] = this.selected;
-            let [x, y] = Game.game_to_screen(row, col);
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = '#000';
-            ctx.fillStyle = 'rgba(0,0,0,0)';
-            draw_hexagon(ctx, x, y, SCALE / Math.sqrt(3));
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0,0,0,0)';
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            ctx.shadowColor = 'rgba(0,0,0,0.3)';
+            this.draw_tile(ctx, this.selected[0], this.selected[1], true);
+            ctx.restore();
         }
     }
 
