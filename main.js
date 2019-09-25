@@ -64,10 +64,10 @@ function pick_random(budget) {
 
 class Board {
     constructor() {
-        this.generate();
+        this.clear();
     }
 
-    generate() {
+    clear() {
         this.tiles = [];
         for (let y = 0; y <= 12; y++) {
             let row = [];
@@ -76,6 +76,17 @@ class Board {
             }
             this.tiles.push(row);
         }
+    }
+
+    copy() {
+        let board = new Board();
+        board.tiles = this.tiles.map(x => x.slice());
+        board.next_metal = this.next_metal;
+        return board;
+    }
+
+    generate() {
+        this.clear();
         this.tiles[6][6] = TILE_GOLD;
 
         let positions = Board.board_positions();
@@ -155,6 +166,15 @@ class Board {
         this.next_metal = TILE_LEAD;
     }
 
+    generate_hard() {
+        while (true) {
+            this.generate();
+            if (this.difficulty() >= 0.8) {
+                return;
+            }
+        }
+    }
+
     unlocked_tiles() {
         let tiles = [];
         for (let row = 1; row <= 11; row++) {
@@ -166,6 +186,59 @@ class Board {
             }
         }
         return tiles;
+    }
+
+    legal_moves() {
+        let moves = [];
+
+        let unlocked = this.unlocked_tiles();
+        for (let i = 0; i < unlocked.length; i++) {
+            for (let j = i; j < unlocked.length; j++) {
+                let [[row1, col1], [row2, col2]] = [unlocked[i], unlocked[j]];
+                if (this.can_match(row1, col1, row2, col2)) {
+                    moves.push([[row1, col1], [row2, col2]]);
+                }
+            }
+        }
+
+        return moves;
+    }
+
+    random_move() {
+        let moves = this.legal_moves();
+        shuffle(moves);
+        if (moves.length === 0) {
+            if (this.tile_is_unlocked(6, 6)) {
+                this.tiles[6][6] = TILE_EMPTY;
+                return 2;
+            }
+            return 0;
+        }
+
+        this.try_match(moves[0][0], moves[0][1]);
+        return 1;
+    }
+
+    random_play() {
+        let x;
+        while (x = this.random_move()) {
+            if (x === 2) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    difficulty() {
+        const GAMES = 10;
+        let wins = 0;
+        for (let i = 0; i < GAMES; i++) {
+            let board2 = this.copy();
+            if (board2.random_play()) {
+                wins++;
+            }
+        }
+        return 1 - wins/GAMES;
     }
 
     static board_positions() {
@@ -226,12 +299,10 @@ class Board {
         return false;
     }
 
-    try_match(row1, col1, row2, col2) {
+    can_match(row1, col1, row2, col2) {
         let [tile1, tile2] = [this.tiles[row1][col1], this.tiles[row2][col2]];
         if (tile1 === tile2 && tile1 >= TILE_AIR && tile1 <= TILE_SALT) {
-            this.tiles[row1][col1] = TILE_EMPTY;
-            this.tiles[row2][col2] = TILE_EMPTY;
-            return;
+            return true;
         }
 
         if (tile1 === TILE_QUICKSILVER || tile1 === TILE_MORS || tile1 === TILE_SALT) {
@@ -239,14 +310,20 @@ class Board {
         }
 
         if (tile2 === TILE_SALT && tile1 >= TILE_AIR && tile1 <= TILE_EARTH
-         || tile1 === TILE_VITAE && tile2 === TILE_MORS) {
-            this.tiles[row1][col1] = TILE_EMPTY;
-            this.tiles[row2][col2] = TILE_EMPTY;
-            return;
+         || tile1 === TILE_VITAE && tile2 === TILE_MORS
+         || tile2 === TILE_QUICKSILVER && tile1 === this.next_metal) {
+            return true;
         }
 
-        if (tile2 === TILE_QUICKSILVER && tile1 === this.next_metal) {
-            this.next_metal++;
+        return false;
+    }
+
+    try_match([row1, col1], [row2, col2]) {
+        if (this.can_match(row1, col1, row2, col2)) {
+            let [tile1, tile2] = [this.tiles[row1][col1], this.tiles[row2][col2]];
+            if (tile1 === TILE_QUICKSILVER || tile2 === TILE_QUICKSILVER) {
+                this.next_metal++;
+            }
             this.tiles[row1][col1] = TILE_EMPTY;
             this.tiles[row2][col2] = TILE_EMPTY;
             return;
@@ -277,6 +354,7 @@ class Board {
 class Game {
     constructor() {
         this.board = new Board();
+        this.board.generate_hard();
         this.selected = null;
     }
 
@@ -425,7 +503,7 @@ class Game {
             this.selected = null;
             return;
         }
-        this.board.try_match(row, col, row2, col2);
+        this.board.try_match([row, col], [row2, col2]);
         this.selected = null;
     }
 }
