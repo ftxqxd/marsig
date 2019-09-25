@@ -64,8 +64,6 @@ function pick_random(budget) {
 
 class Board {
     constructor() {
-        this.selected = null;
-
         this.generate();
     }
 
@@ -228,6 +226,33 @@ class Board {
         return false;
     }
 
+    try_match(row1, col1, row2, col2) {
+        let [tile1, tile2] = [this.tiles[row1][col1], this.tiles[row2][col2]];
+        if (tile1 === tile2 && tile1 >= TILE_AIR && tile1 <= TILE_SALT) {
+            this.tiles[row1][col1] = TILE_EMPTY;
+            this.tiles[row2][col2] = TILE_EMPTY;
+            return;
+        }
+
+        if (tile1 === TILE_QUICKSILVER || tile1 === TILE_MORS || tile1 === TILE_SALT) {
+            [tile1, tile2] = [tile2, tile1];
+        }
+
+        if (tile2 === TILE_SALT && tile1 >= TILE_AIR && tile1 <= TILE_EARTH
+         || tile1 === TILE_VITAE && tile2 === TILE_MORS) {
+            this.tiles[row1][col1] = TILE_EMPTY;
+            this.tiles[row2][col2] = TILE_EMPTY;
+            return;
+        }
+
+        if (tile2 === TILE_QUICKSILVER && tile1 === this.next_metal) {
+            this.next_metal++;
+            this.tiles[row1][col1] = TILE_EMPTY;
+            this.tiles[row2][col2] = TILE_EMPTY;
+            return;
+        }
+    }
+
     static row_size(row) {
         if (row <= 0 || row > 11) {
             return 0;
@@ -246,6 +271,13 @@ class Board {
         } else {
             return row - 6;
         }
+    }
+}
+
+class Game {
+    constructor() {
+        this.board = new Board();
+        this.selected = null;
     }
 
     static tile_colour(tile) {
@@ -338,18 +370,18 @@ class Board {
         for (let row = 1; row <= 11; row++) {
             let offset = Board.row_offset(row);
             for (let col = 1 + offset; col <= offset + Board.row_size(row); col++) {
-                let tile = this.tiles[row][col];
+                let tile = this.board.tiles[row][col];
 
-                let [x, y] = Board.game_to_screen(row, col);
+                let [x, y] = Game.game_to_screen(row, col);
                 ctx.strokeStyle = '#000';
-                ctx.fillStyle = Board.tile_colour(tile);
+                ctx.fillStyle = Game.tile_colour(tile);
                 ctx.lineWidth = 1;
                 draw_hexagon(ctx, x, y, SCALE / Math.sqrt(3));
                 ctx.fillStyle = '#fff';
                 ctx.font = "36px Symbola";
-                ctx.fillText(Board.tile_symbol(tile), x - SCALE*0.2, y + SCALE*0.17);
+                ctx.fillText(Game.tile_symbol(tile), x - SCALE*0.2, y + SCALE*0.17);
 
-                if (!this.tile_is_unlocked(row, col)) {
+                if (!this.board.tile_is_unlocked(row, col)) {
                     ctx.strokeStyle = 'rgba(0,0,0,0)';
                     ctx.fillStyle = 'rgba(255,255,255,0.7)';
                     draw_hexagon(ctx, x, y, SCALE / Math.sqrt(3));
@@ -359,7 +391,7 @@ class Board {
 
         if (this.selected !== null) {
             let [row, col] = this.selected;
-            let [x, y] = Board.game_to_screen(row, col);
+            let [x, y] = Game.game_to_screen(row, col);
             ctx.lineWidth = 3;
             ctx.strokeStyle = '#000';
             ctx.fillStyle = 'rgba(0,0,0,0)';
@@ -369,20 +401,20 @@ class Board {
 
     onclick(e) {
         let [x, y] = [e.pageX - cvs.offsetLeft, e.pageY - cvs.offsetTop];
-        let [row, col] = Board.screen_to_game(x, y);
+        let [row, col] = Game.screen_to_game(x, y);
         this.select(row, col);
 
         this.draw(ctx);
     }
 
     select(row, col) {
-        if (!this.tile_is_unlocked(row, col)) {
+        if (!this.board.tile_is_unlocked(row, col)) {
             this.selected = null;
             return;
         }
         if (this.selected === null) {
-            if (this.tiles[row][col] === TILE_GOLD && this.next_metal === TILE_GOLD) {
-                this.tiles[row][col] = TILE_EMPTY;
+            if (this.board.tiles[row][col] === TILE_GOLD && this.board.next_metal === TILE_GOLD) {
+                this.board.tiles[row][col] = TILE_EMPTY;
                 return;
             }
             this.selected = [row, col];
@@ -393,35 +425,11 @@ class Board {
             this.selected = null;
             return;
         }
-        let [tile1, tile2] = [this.tiles[row][col], this.tiles[row2][col2]];
-        if (this.can_match(tile1, tile2)) {
-            this.tiles[row][col] = TILE_EMPTY;
-            this.tiles[row2][col2] = TILE_EMPTY;
-        }
+        this.board.try_match(row, col, row2, col2);
         this.selected = null;
-    }
-
-    can_match(tile1, tile2) {
-        if (tile1 === tile2 && tile1 >= TILE_AIR && tile1 <= TILE_SALT) {
-            return true;
-        }
-        if (tile1 === TILE_QUICKSILVER || tile1 === TILE_MORS || tile1 === TILE_SALT) {
-            [tile1, tile2] = [tile2, tile1];
-        }
-        if (tile2 === TILE_SALT && tile1 >= TILE_AIR && tile1 <= TILE_EARTH) {
-            return true;
-        }
-        if (tile2 === TILE_QUICKSILVER && tile1 === this.next_metal) {
-            this.next_metal++;
-            return true;
-        }
-        if (tile1 === TILE_VITAE && tile2 === TILE_MORS) {
-            return true;
-        }
-        return false;
     }
 }
 
-let b = new Board();
-b.draw(ctx);
-cvs.onclick = (e) => b.onclick(e);
+let game = new Game();
+game.draw(ctx);
+cvs.onclick = (e) => game.onclick(e);
