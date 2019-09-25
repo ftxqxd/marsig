@@ -2,11 +2,11 @@ self.addEventListener('install', function (e) {
     e.waitUntil(
         caches.open('marsig').then(function (cache) {
             return cache.addAll([
-                '/',
-                '/index.html',
-                '/style.css',
-                '/main.js',
-                '/Symbola.ttf',
+                './',
+                './index.html',
+                './style.css',
+                './main.js',
+                './Symbola.ttf',
             ]);
         })
     );
