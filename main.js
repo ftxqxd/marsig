@@ -411,7 +411,6 @@ class Game {
             case TILE_QUICKSILVER:
                 return '☿';
             case TILE_MORS:
-                return '🜞';
             case TILE_VITAE:
                 return '🜍';
             case TILE_LEAD:
@@ -428,6 +427,58 @@ class Game {
                 return '☉';
             default:
                 return '';
+        }
+    }
+
+    static tile_size(tile) {
+        switch (tile) {
+            case TILE_EMPTY:
+            case TILE_AIR:
+            case TILE_FIRE:
+            case TILE_WATER:
+            case TILE_EARTH:
+            case TILE_SALT:
+            case TILE_MORS:
+            case TILE_VITAE:
+                return '48px';
+            case TILE_QUICKSILVER:
+            case TILE_LEAD:
+            case TILE_TIN:
+            case TILE_IRON:
+            case TILE_COPPER:
+            case TILE_SILVER:
+                return '36px';
+            case TILE_GOLD:
+                return '42px';
+        }
+    }
+
+    static tile_offset(tile) {
+        switch (tile) {
+            case TILE_EMPTY:
+            case TILE_AIR:
+            case TILE_FIRE:
+            case TILE_QUICKSILVER:
+            case TILE_LEAD:
+            case TILE_TIN:
+                return [0.0, 0.0];
+            case TILE_WATER:
+            case TILE_EARTH:
+                return [0.0, 0.09];
+            case TILE_MORS:
+                return [0.0, -0.08];
+            case TILE_VITAE:
+                return [0.0, 0.03];
+            case TILE_COPPER:
+                return [0.0, 0.01];
+            case TILE_SALT:
+                return [-0.002, 0.05];
+            case TILE_GOLD:
+                return [0.0, 0.02];
+            case TILE_SILVER:
+                return [0.0, 0.06];
+            case TILE_IRON:
+                return [0.0, 0.03];
         }
     }
 
@@ -456,8 +507,17 @@ class Game {
                 ctx.lineWidth = 1;
                 draw_hexagon(ctx, x, y, SCALE / Math.sqrt(3));
                 ctx.fillStyle = '#fff';
-                ctx.font = "36px Symbola";
-                ctx.fillText(Game.tile_symbol(tile), x - SCALE*0.2, y + SCALE*0.17);
+                ctx.font = Game.tile_size(tile) + " Symbola";
+                let [offset_x, offset_y] = Game.tile_offset(tile);
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.save();
+                ctx.translate(x + SCALE*offset_x, y + SCALE*offset_y);
+                if (tile === TILE_MORS) {
+                    ctx.rotate(Math.PI);
+                }
+                ctx.fillText(Game.tile_symbol(tile), 0, 0);
+                ctx.restore();
 
                 if (!this.board.tile_is_unlocked(row, col)) {
                     ctx.strokeStyle = 'rgba(0,0,0,0)';
