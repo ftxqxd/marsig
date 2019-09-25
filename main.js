@@ -20,7 +20,7 @@ const TILE_EMPTY = 0,
       TILE_VITAE       = 13,
       TILE_MORS        = 14;
 
-const SCALE = 50;
+const SCALE = 60;
 
 function draw_hexagon(ctx, x, y, size) {
     ctx.save();
@@ -321,6 +321,18 @@ class Board {
         }
     }
 
+    static game_to_screen(row, col) {
+        let x = Math.round((col - row/2 + 3) * SCALE);
+        let y = row * SCALE / 1.2;
+        return [x, y];
+    }
+
+    static screen_to_game(x, y) {
+        let row = Math.round(y/SCALE*1.2);
+        let col = Math.round(x/SCALE + row/2) - 3;
+        return [row, col];
+    }
+
     draw(ctx) {
         ctx.clearRect(0, 0, cvs.width, cvs.height);
         for (let row = 1; row <= 11; row++) {
@@ -328,8 +340,7 @@ class Board {
             for (let col = 1 + offset; col <= offset + Board.row_size(row); col++) {
                 let tile = this.tiles[row][col];
 
-                let x = Math.round((col - row/2 + 3) * SCALE * 1.18);
-                let y = row * SCALE;
+                let [x, y] = Board.game_to_screen(row, col);
                 ctx.strokeStyle = '#000';
                 ctx.fillStyle = Board.tile_colour(tile);
                 ctx.lineWidth = 1;
@@ -343,21 +354,22 @@ class Board {
                     ctx.fillStyle = 'rgba(255,255,255,0.7)';
                     draw_hexagon(ctx, x, y, SCALE / Math.sqrt(3));
                 }
-
-                if (this.selected !== null && row == this.selected[0] && col == this.selected[1]) {
-                    ctx.lineWidth = 3;
-                    ctx.strokeStyle = '#000';
-                    ctx.fillStyle = 'rgba(0,0,0,0)';
-                    draw_hexagon(ctx, x, y, SCALE / Math.sqrt(3));
-                }
             }
+        }
+
+        if (this.selected !== null) {
+            let [row, col] = this.selected;
+            let [x, y] = Board.game_to_screen(row, col);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#000';
+            ctx.fillStyle = 'rgba(0,0,0,0)';
+            draw_hexagon(ctx, x, y, SCALE / Math.sqrt(3));
         }
     }
 
     onclick(e) {
         let [x, y] = [e.pageX - cvs.offsetLeft, e.pageY - cvs.offsetTop];
-        let row = Math.round(y/SCALE);
-        let col = Math.round(x/SCALE/1.18 + row/2) - 3;
+        let [row, col] = Board.screen_to_game(x, y);
         this.select(row, col);
 
         this.draw(ctx);
