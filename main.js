@@ -376,7 +376,7 @@ class Game {
             case TILE_QUICKSILVER:
                 return '#dda';
             case TILE_MORS:
-                return '#222';
+                return '#444';
             case TILE_VITAE:
                 return '#daa';
             case TILE_LEAD:
