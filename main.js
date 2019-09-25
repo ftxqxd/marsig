@@ -845,7 +845,7 @@ class Game {
 
     static format_time(elapsed) {
         let [minutes, seconds] = [Math.floor(elapsed / 60), elapsed % 60];
-        return minutes + ':' + seconds;
+        return minutes + ':' + (seconds + 1000 + '').slice(-2);
     }
 
     onclick(e) {
