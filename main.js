@@ -326,8 +326,9 @@ class Board {
             }
             this.tiles[row1][col1] = TILE_EMPTY;
             this.tiles[row2][col2] = TILE_EMPTY;
-            return;
+            return true;
         }
+        return false;
     }
 
     static row_size(row) {
@@ -356,18 +357,19 @@ class Game {
         this.board = new Board();
         this.board.generate_hard();
         this.selected = null;
+        this.start_time = null;
     }
 
     static tile_colour(tile) {
         switch (tile) {
             case TILE_EMPTY:
-                return '#faf8f0';
+                return '#fff';
             case TILE_AIR:
-                return '#88f';
+                return '#aaf';
             case TILE_FIRE:
                 return '#f80';
             case TILE_WATER:
-                return '#2dd';
+                return '#2dc';
             case TILE_EARTH:
                 return '#3a3';
             case TILE_SALT:
@@ -473,7 +475,7 @@ class Game {
             case TILE_COPPER:
                 return [0.0, 0.01];
             case TILE_SALT:
-                return [-0.002, 0.05];
+                return [0.00, 0.02];
             case TILE_GOLD:
                 return [0.0, -0.02];
             case TILE_SILVER:
@@ -520,13 +522,12 @@ class Game {
 
         if (!this.board.tile_is_unlocked(row, col)) {
             ctx.strokeStyle = 'rgba(0,0,0,0)';
-            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.fillStyle = 'rgba(255,255,255,0.85)';
             draw_hexagon(ctx, x, y, SCALE / Math.sqrt(3));
         }
     }
 
     draw(ctx) {
-        console.log('draw');
         ctx.clearRect(0, 0, cvs.width, cvs.height);
         for (let row = 1; row <= 11; row++) {
             let offset = Board.row_offset(row);
@@ -544,12 +545,34 @@ class Game {
         }
     }
 
+    static format_time(elapsed) {
+        let [minutes, seconds] = [Math.floor(elapsed / 60), elapsed % 60];
+        return minutes + ':' + seconds;
+    }
+
     onclick(e) {
         let [x, y] = [e.pageX - cvs.offsetLeft, e.pageY - cvs.offsetTop];
         let [row, col] = Game.screen_to_game(x, y);
         this.select(row, col);
 
         this.draw(ctx);
+
+        if (this.board.unlocked_tiles().length === 0) {
+            let elapsed = Math.floor((new Date() - this.start_time)/1000);
+            let highscore = window.localStorage.getItem('highscore');
+            let message = '\n\nHigh score: ' + Game.format_time(+highscore);
+            if (!highscore || elapsed < +highscore) {
+                window.localStorage.setItem('highscore', elapsed);
+                message = '\n\nNew high score!';
+            }
+            alert("You win!\n\nYour time: " + Game.format_time(elapsed) + message);
+        }
+    }
+
+    try_start_timer() {
+        if (this.start_time === null) {
+            this.start_time = new Date();
+        }
     }
 
     select(row, col) {
@@ -560,6 +583,7 @@ class Game {
         if (this.selected === null) {
             if (this.board.tiles[row][col] === TILE_GOLD && this.board.next_metal === TILE_GOLD) {
                 this.board.tiles[row][col] = TILE_EMPTY;
+                this.try_start_timer();
                 return;
             }
             this.selected = [row, col];
@@ -570,7 +594,9 @@ class Game {
             this.selected = null;
             return;
         }
-        this.board.try_match([row, col], [row2, col2]);
+        if (this.board.try_match([row, col], [row2, col2])) {
+            this.try_start_timer();
+        }
         this.selected = null;
     }
 }
