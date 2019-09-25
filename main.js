@@ -456,17 +456,18 @@ class Game {
     static tile_offset(tile) {
         switch (tile) {
             case TILE_EMPTY:
-            case TILE_AIR:
-            case TILE_FIRE:
             case TILE_QUICKSILVER:
             case TILE_LEAD:
             case TILE_TIN:
                 return [0.0, 0.0];
+            case TILE_AIR:
+            case TILE_FIRE:
+                return [0.0, -0.02];
             case TILE_WATER:
             case TILE_EARTH:
-                return [0.0, 0.09];
+                return [0.0, 0.05];
             case TILE_MORS:
-                return [0.0, -0.08];
+                return [0.0, -0.03];
             case TILE_VITAE:
                 return [0.0, 0.03];
             case TILE_COPPER:
@@ -474,9 +475,9 @@ class Game {
             case TILE_SALT:
                 return [-0.002, 0.05];
             case TILE_GOLD:
-                return [0.0, 0.02];
+                return [0.0, -0.02];
             case TILE_SILVER:
-                return [0.0, 0.06];
+                return [0.0, 0.03];
             case TILE_IRON:
                 return [0.0, 0.03];
         }
@@ -495,6 +496,7 @@ class Game {
     }
 
     draw(ctx) {
+        console.log('draw');
         ctx.clearRect(0, 0, cvs.width, cvs.height);
         for (let row = 1; row <= 11; row++) {
             let offset = Board.row_offset(row);
@@ -507,7 +509,7 @@ class Game {
                 ctx.lineWidth = 1;
                 draw_hexagon(ctx, x, y, SCALE / Math.sqrt(3));
                 ctx.fillStyle = '#fff';
-                ctx.font = Game.tile_size(tile) + " Symbola";
+                ctx.font = Game.tile_size(tile) + " SymbolaMarsig";
                 let [offset_x, offset_y] = Game.tile_offset(tile);
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
@@ -568,6 +570,12 @@ class Game {
     }
 }
 
+
 let game = new Game();
 game.draw(ctx);
-cvs.onclick = (e) => game.onclick(e);
+cvs.onclick = e => game.onclick(e);
+// try to reload font
+setTimeout(() => game.draw(ctx), 100);
+setTimeout(() => game.draw(ctx), 500);
+setTimeout(() => game.draw(ctx), 1000);
+setTimeout(() => game.draw(ctx), 2000);
