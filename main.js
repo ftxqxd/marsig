@@ -447,7 +447,7 @@ class Board {
     generate_hard() {
         while (true) {
             this.generate();
-            if (this.difficulty(25) >= 0.96) {
+            if (this.difficulty(30) >= 1.0) {
                 return;
             }
         }
