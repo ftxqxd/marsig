@@ -785,12 +785,12 @@ class Game {
 
     static game_to_screen(row, col) {
         let x = Math.round((col - row/2 + 3) * SCALE) - 10;
-        let y = row * SCALE / 1.15;
+        let y = row * SCALE / Math.sqrt(3) * 1.5;
         return [x, y];
     }
 
     static screen_to_game(x, y) {
-        let row = Math.round(y/SCALE*1.15);
+        let row = Math.round(y / SCALE / 1.5 * Math.sqrt(3));
         let col = Math.round((x + 10)/SCALE + row/2) - 3;
         return [row, col];
     }
