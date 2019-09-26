@@ -1,3 +1,4 @@
+// v0
 self.addEventListener('install', function (e) {
     e.waitUntil(
         caches.open('marsig').then(function (cache) {
