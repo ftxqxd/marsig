@@ -402,7 +402,9 @@ class Board {
             [TILE_EARTH]: 4,
             [TILE_SALT]:  2,
             [TILE_MORS]: 4,
-            [TILE_QUICKSILVER]: 5,
+            // This value isn't the real number of metal matches; rather, we just
+            // use it to make the metals more likely to appear towards the centre
+            [TILE_QUICKSILVER]: 2,
         };
 
         let number_of_salt_matches = Math.floor(Math.random()*3);
@@ -431,6 +433,8 @@ class Board {
                 this.tiles[row1][col1] = TILE_QUICKSILVER;
                 this.tiles[row2][col2] = metal;
                 metal++;
+                if (metal !== TILE_GOLD) budget[match]++; // keep the value constant
+                else budget[match] = 1; // will be set to zero when it is decremented later
             } else if (match == TILE_SALT) {
                 let element = salt_matches.pop();
                 this.tiles[row1][col1] = TILE_SALT;
